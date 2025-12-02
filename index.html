@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechSupport AI - Improved ChatBot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* نفس الـ CSS السابق - اختصرته للتركيز على الكود */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 800px; background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); overflow: hidden; }
+        .header { background: linear-gradient(90deg, #4f46e5, #7c3aed); color: white; padding: 25px 30px; display: flex; align-items: center; gap: 15px; }
+        .header i { font-size: 28px; }
+        .header h1 { font-size: 24px; }
+        .chat-container { height: 500px; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 20px; }
+        .message { max-width: 80%; padding: 15px 20px; border-radius: 20px; line-height: 1.5; animation: fadeIn 0.3s ease; }
+        .bot-message { background: #f1f5f9; color: #334155; align-self: flex-start; border-bottom-left-radius: 5px; }
+        .user-message { background: linear-gradient(90deg, #4f46e5, #7c3aed); color: white; align-self: flex-end; border-bottom-right-radius: 5px; }
+        .input-container { border-top: 1px solid #e2e8f0; padding: 20px 25px; display: flex; gap: 15px; }
+        input { flex: 1; padding: 15px 20px; border: 2px solid #e2e8f0; border-radius: 50px; font-size: 16px; }
+        button { background: linear-gradient(90deg, #4f46e5, #7c3aed); color: white; border: none; width: 55px; height: 55px; border-radius: 50%; cursor: pointer; font-size: 20px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <i class="fas fa-robot"></i>
+            <h1>TechSupport AI - Smart ChatBot</h1>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot-message">
+                <strong>🤖 Hello! I'm your TechSupport Assistant</strong><br><br>
+                I can help you with:<br>
+                • 📦 <strong>Order Tracking</strong> (try: "where is my order?")<br>
+                • 📱 <strong>Product Info</strong> (try: "tell me about iPhone")<br>
+                • 🔄 <strong>Returns & Refunds</strong><br>
+                • 🔧 <strong>Technical Support</strong><br><br>
+                Just type your question!
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Type your question here..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced response system with better matching
+        const responsePatterns = [
+            {
+                keywords: ['hello', 'hi', 'hey', 'good morning', 'good afternoon'],
+                responses: [
+                    "Hello! 👋 How can I assist you today?",
+                    "Hi there! Ready to help with your tech needs.",
+                    "Hey! What can I do for you?"
+                ]
+            },
+            {
+                keywords: ['track', 'order', 'delivery', 'ship', 'where is my', 'when will'],
+                responses: [
+                    "I can help track your order! Please provide your Order ID (like ORD-123456).",
+                    "To check your order status, I'll need the Order ID from your confirmation email.",
+                    "Looking for delivery updates? Share your Order ID and I'll check the status."
+                ],
+                followUp: "Would you like to check another order or is there anything else?"
+            },
+            {
+                keywords: ['iphone', 'samsung', 'laptop', 'headphone', 'product', 'item'],
+                responses: [
+                    "I have information on various products! Which specific model are you interested in?",
+                    "We carry smartphones, laptops, headphones, and accessories. What would you like to know about?",
+                    "I can provide specs, pricing, and availability. Tell me the product name."
+                ]
+            },
+            {
+                keywords: ['return', 'refund', 'exchange', 'send back', 'broken'],
+                responses: [
+                    "Our return policy allows returns within 30 days. Do you have your order number?",
+                    "I can initiate a return for you. Please provide: 1) Order ID, 2) Reason for return.",
+                    "For returns, items must be unused and in original packaging. Need to start a return?"
+                ]
+            },
+            {
+                keywords: ['help', 'support', 'problem', 'issue', 'not working', 'fix'],
+                responses: [
+                    "I'm here to help! Please describe the issue you're experiencing.",
+                    "Technical support is available. What device and what problem are you having?",
+                    "Let me help troubleshoot. Is it a hardware issue, software problem, or connectivity?"
+                ]
+            },
+            {
+                keywords: ['thank', 'thanks', 'appreciate'],
+                responses: [
+                    "You're welcome! 😊 Happy to help.",
+                    "Glad I could assist! Let me know if you need anything else.",
+                    "Anytime! Remember, I'm here 24/7 for your tech support needs."
+                ]
+            },
+            {
+                keywords: ['price', 'cost', 'how much', 'expensive'],
+                responses: [
+                    "Prices vary by product. Could you specify which item you're asking about?",
+                    "I can check current pricing. Which product are you interested in?",
+                    "We have items ranging from $50 to $2000. What's your budget range?"
+                ]
+            },
+            {
+                keywords: ['contact', 'human', 'agent', 'person', 'talk to'],
+                responses: [
+                    "I can connect you with a live agent. One moment please...",
+                    "Transferring you to a human representative now.",
+                    "Our customer service team will assist you shortly. Please hold."
+                ]
+            }
+        ];
+
+        // Synonyms and variations for better matching
+        const synonyms = {
+            'order': ['purchase', 'package', 'parcel'],
+            'problem': ['trouble', 'difficulty', 'error'],
+            'help': ['assist', 'aid', 'support'],
+            'phone': ['mobile', 'cellphone', 'smartphone'],
+            'laptop': ['notebook', 'computer', 'pc']
+        };
+
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+
+        function addMessage(text, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.innerHTML = text;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function findBestResponse(userText) {
+            userText = userText.toLowerCase();
+            
+            // Check for exact matches in patterns
+            for (const pattern of responsePatterns) {
+                for (const keyword of pattern.keywords) {
+                    // Check direct keyword match
+                    if (userText.includes(keyword)) {
+                        const response = pattern.responses[Math.floor(Math.random() * pattern.responses.length)];
+                        return {
+                            response: response,
+                            hasFollowUp: !!pattern.followUp,
+                            followUp: pattern.followUp
+                        };
+                    }
+                    
+                    // Check synonyms
+                    if (synonyms[keyword]) {
+                        for (const synonym of synonyms[keyword]) {
+                            if (userText.includes(synonym)) {
+                                const response = pattern.responses[Math.floor(Math.random() * pattern.responses.length)];
+                                return {
+                                    response: response,
+                                    hasFollowUp: !!pattern.followUp,
+                                    followUp: pattern.followUp
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // If no match found, use context-based fallback
+            const lastBotMessage = document.querySelector('.bot-message:last-child');
+            if (lastBotMessage) {
+                const lastText = lastBotMessage.textContent.toLowerCase();
+                
+                // Context-aware responses
+                if (lastText.includes('order id') || lastText.includes('track')) {
+                    if (userText.length > 5) {
+                        // Simulate order lookup
+                        const orderNumbers = ['ORD-789123', 'ORD-456789', 'ORD-123456'];
+                        const randomOrder = orderNumbers[Math.floor(Math.random() * orderNumbers.length)];
+                        const statuses = ['Shipped', 'Processing', 'Out for Delivery'];
+                        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                        
+                        return {
+                            response: `✅ Found order <strong>${randomOrder}</strong>!<br>
+                            Status: <strong>${randomStatus}</strong><br>
+                            Estimated Delivery: <strong>Tomorrow, 10AM-2PM</strong><br>
+                            Carrier: <strong>DHL Express</strong><br><br>
+                            Is there anything else I can help with?`,
+                            hasFollowUp: true,
+                            followUp: "Need help with another order or something else?"
+                        };
+                    }
+                }
+                
+                if (lastText.includes('product') || lastText.includes('item')) {
+                    const products = {
+                        'iphone': "📱 iPhone 15 Pro: 6.7\" Super Retina, A17 Pro chip, 48MP camera, 256GB - $999",
+                        'samsung': "📱 Samsung Galaxy S24: 6.8\" Dynamic AMOLED, Snapdragon 8 Gen 3, 200MP camera - $799",
+                        'laptop': "💻 MacBook Pro M3: 14\" Liquid Retina, 16GB RAM, 512GB SSD, 18-hour battery - $1,599",
+                        'headphone': "🎧 Sony WH-1000XM5: Noise cancelling, 30-hour battery, premium sound - $399"
+                    };
+                    
+                    for (const [product, description] of Object.entries(products)) {
+                        if (userText.includes(product)) {
+                            return {
+                                response: `${description}<br><br>✅ In stock! Free shipping available.<br>Would you like to know about warranty or accessories?`,
+                                hasFollowUp: true,
+                                followUp: "Interested in this product or want to see others?"
+                            };
+                        }
+                    }
+                }
+            }
+            
+            // Default response if nothing matches
+            const defaultResponses = [
+                "I'm not sure I understand. Could you rephrase your question?",
+                "I specialize in tech support. Try asking about orders, products, returns, or technical issues.",
+                "Let me try to help. Could you provide more details about what you need?"
+            ];
+            
+            return {
+                response: defaultResponses[Math.floor(Math.random() * defaultResponses.length)],
+                hasFollowUp: true,
+                followUp: "You can ask me about: order tracking, product information, returns, or tech support."
+            };
+        }
+
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (message === "") return;
+            
+            // Add user message
+            addMessage(message, true);
+            userInput.value = "";
+            
+            // Show typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot-message';
+            typingDiv.innerHTML = '<i>TechSupport AI is typing...</i>';
+            typingDiv.id = 'typingIndicator';
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Simulate thinking time (random between 0.5-1.5 seconds)
+            setTimeout(() => {
+                // Remove typing indicator
+                document.getElementById('typingIndicator')?.remove();
+                
+                // Get response
+                const result = findBestResponse(message);
+                addMessage(result.response);
+                
+                // Add follow-up question if available
+                if (result.hasFollowUp) {
+                    setTimeout(() => {
+                        addMessage(result.followUp);
+                    }, 500);
+                }
+            }, 500 + Math.random() * 1000);
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Initialize with a sample interaction
+        setTimeout(() => {
+            addMessage("💡 <strong>Try asking me:</strong><br>• 'Where is my order?'<br>• 'Tell me about iPhones'<br>• 'I need to return something'<br>• 'My laptop is not working'");
+        }, 1000);
+    </script>
+</body>
+</html>
